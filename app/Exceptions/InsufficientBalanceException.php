@@ -13,7 +13,7 @@ class InsufficientBalanceException extends Exception
     {
         return response()->json([
             'status'  => 'error',
-            'code'    => 422,
+            'code'    => 403,
             'message' => 'Saldo tidak mencukupi biaya transaksi'
         ], 403);
     }

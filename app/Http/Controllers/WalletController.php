@@ -157,7 +157,15 @@ class WalletController extends Controller
                 'message' => 'Withdraw berhasil.',
                 'data'    => new TransactionResource($transaction->load('member')),
             ]);
+        } catch (InsufficientBalanceException $e) {
+
+            return response()->json([
+                'status'  => 'error',
+                'code'    => 400,
+                'message' => 'Saldo tidak mencukupi.'
+            ], 400);
         } catch (\Exception $e) {
+
             //  LOG ERROR
             Log::channel('wallet')->error('WITHDRAW_FAILED', [
                 'member_code' => $memberCode,
@@ -169,7 +177,7 @@ class WalletController extends Controller
                 'status'  => 'error',
                 'code'    => 500,
                 'message' => 'Server error. Contact admin.'
-            ]);
+            ], 500);
         }
     }
 }
