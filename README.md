@@ -157,7 +157,7 @@ POST /wallet/{memberCode}/deposit
 
 ---
 
-## 💸 4. Withdraw
+## 💸 3. Withdraw
 
 ### Endpoint
 
