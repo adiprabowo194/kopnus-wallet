@@ -9,7 +9,7 @@ class Transaction extends Model
 {
     protected $fillable = [
         'reference_number',
-        'member_id',
+        'member_code',
         'type',
         'amount',
         'balance_before',
@@ -20,6 +20,6 @@ class Transaction extends Model
 
     public function member(): BelongsTo
     {
-        return $this->belongsTo(Member::class);
+        return $this->belongsTo(Member::class, 'member_code', 'member_code');
     }
 }

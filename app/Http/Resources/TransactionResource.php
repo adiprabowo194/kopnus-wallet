@@ -16,15 +16,14 @@ class TransactionResource extends JsonResource
     {
         return [
             'id'              => $this->id,
-            'reference_no'    => $this->reference_no,
+            'reference_no'    => $this->reference_number,
             'type'            => $this->type,
-            'amount'          => (float) $this->amount, // aman untuk decimal
+            'amount'          => (float) $this->amount,
             'balance_before'  => (float) $this->balance_before,
             'balance_after'   => (float) $this->balance_after,
-            'status'          => $this->status,
             'description'     => $this->description,
             'member' => [
-                'member_code' => $this->member->member_code,
+                'member_code' => $this->member_code,
                 'name'        => $this->member->name,
             ],
 

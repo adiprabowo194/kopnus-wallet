@@ -13,20 +13,21 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->string('reference_number', 30)->unique();
-            $table->foreignId('member_id')
-                ->constrained('members')
+            $table->string('reference_number', 50)->unique();
+            $table->string('member_code', 50);
+            $table->foreign('member_code')
+                ->references('member_code')
+                ->on('members')
                 ->restrictOnDelete();
             $table->enum('type', ['deposit', 'withdraw']);
             $table->decimal('amount', 15, 2);
             $table->decimal('balance_before', 15, 2);
             $table->decimal('balance_after', 15, 2);
-            $table->enum('status', ['success', 'failed'])->default('success');
             $table->string('description', 255)->nullable();
             $table->timestamps();
 
             $table->index('reference_number');
-            $table->index(['member_id', 'created_at']);
+            $table->index(['member_code', 'created_at']);
         });
     }
 

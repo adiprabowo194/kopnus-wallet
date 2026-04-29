@@ -14,22 +14,27 @@ use App\Exceptions\MemberInactiveException;
 
 use App\Models\Member;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class WalletController extends Controller
 {
-    // GET /api/wallet/{memberCode}/balance
-    public function balance(string $memberCode)
+
+    public function checkMember(string $memberCode)
     {
         $member = Member::where('member_code', $memberCode)->first();
-
         if (!$member) {
             throw new MemberNotFoundException();
         }
         if (!$member->isActive()) {
             throw new MemberInactiveException();
         }
-
+        return $member;
+    }
+    // GET /api/wallet/{memberCode}/balance
+    public function balance(string $memberCode)
+    {
+        $member = $this->checkMember($memberCode);
         return response()->json([
             'status'  => 'success',
             'code'    => 200,
@@ -42,91 +47,73 @@ class WalletController extends Controller
         ]);
     }
 
-    // POST /api/wallet/{memberCode}/history
-    public function history(string $memberCode)
-    {
-        $member = Member::where('member_code', $memberCode)->first();
-
-        if (!$member) {
-            throw new MemberNotFoundException();
-        }
-
-        if (!$member->isActive()) {
-            throw new MemberInactiveException();
-        }
-
-        $transactions = Transaction::where('member_id', $member->id)
-            ->latest()
-            ->paginate(10);
-
-        return response()->json([
-            'status'  => 'success',
-            'code'    => 200,
-            'message' => 'Histori transaksi ditemukan.',
-            'data'    => TransactionResource::collection($transactions),
-            'meta'    => [
-                'current_page' => $transactions->currentPage(),
-                'last_page'    => $transactions->lastPage(),
-                'per_page'     => $transactions->perPage(),
-                'total'        => $transactions->total(),
-            ]
-        ]);
-    }
-
     // POST /api/wallet/{memberCode}/deposit
     public function deposit(DepositRequest $request, string $memberCode)
     {
-        $member = Member::where('member_code', $memberCode)->firstOrFail();
+        $member = $this->checkMember($memberCode);
+        try {
+            $transaction = DB::transaction(function () use ($member, $request) {
+                $locked = Member::where('member_code', $member->member_code)->lockForUpdate()->firstOrFail();
 
-        if (!$member->isActive()) {
-            throw new MemberInactiveException();
-        }
+                $balanceBefore = (float) $locked->balance;
+                $balanceAfter  = round($balanceBefore + (float) $request->amount, 2);
 
-        $transaction = DB::transaction(function () use ($member, $request) {
-            $locked = Member::where('member_code', $member->member_code)->lockForUpdate()->firstOrFail();
+                $locked->balance = $balanceAfter;
+                $locked->save();
 
-            $balanceBefore = (float) $locked->balance;
-            $balanceAfter  = round($balanceBefore + (float) $request->amount, 2);
+                $transaction = Transaction::create([
+                    'reference_number' => 'TXN-' . now()->format('Ymd-His') . '-' . Str::random(5),
+                    'member_code'        => $locked->member_code,
+                    'type'             => 'deposit',
+                    'amount'           => $request->amount,
+                    'balance_before'   => $balanceBefore,
+                    'balance_after'    => $balanceAfter,
+                    'description'      => $request->description,
+                ]);
 
-            $locked->balance = $balanceAfter;
-            $locked->save();
+                //  LOG SUCCESS
+                Log::channel('wallet')->info('DEPOSIT_SUCCESS', [
+                    'member_code' => $locked->member_code,
+                    'amount'      => $request->amount,
+                    'before'      => $balanceBefore,
+                    'after'       => $balanceAfter,
+                    'reference'   => $transaction->reference_number,
+                    'ip'          => request()->ip(),
+                ]);
+                return $transaction;
+            });
 
-            return Transaction::create([
-                'reference_number' => 'TXN-' . now()->format('Ymd-His') . '-' . Str::random(5),
-                'member_id'        => $locked->id,
-                'type'             => 'deposit',
-                'amount'           => $request->amount,
-                'balance_before'   => $balanceBefore,
-                'balance_after'    => $balanceAfter,
-                'description'      => $request->description,
+            return response()->json([
+                'status'  => 'success',
+                'code'    => 200,
+                'message' => 'Deposit berhasil.',
+                'data'    => new TransactionResource($transaction->load('member')),
             ]);
-        });
+        } catch (\Throwable $e) {
+            //  LOG ERROR
+            Log::channel('wallet')->error('DEPOSIT_FAILED', [
+                'member_code' => $memberCode,
+                'amount'      => $request->amount,
+                'error'       => $e->getMessage(),
+            ]);
 
-        return response()->json([
-            'status'  => 'success',
-            'code'    => 200,
-            'message' => 'Deposit berhasil.',
-            'data'    => new TransactionResource($transaction->load('member')),
-        ]);
+            return response()->json([
+                'status'  => 'error',
+                'code'    => 500,
+                'message' => 'Server error. Contact admin.'
+            ]);
+        }
     }
 
     // POST /api/wallet/{memberCode}/withdraw
     public function withdraw(WithdrawRequest $request, string $memberCode)
     {
-        $member = Member::where('member_code', $memberCode)->firstOrFail();
-        if (!$member) {
-            throw new MemberNotFoundException();
-        }
-        if (!$member->isActive()) {
-            throw new MemberInactiveException();
-        }
+        $member = $this->checkMember($memberCode);
 
         try {
             $transaction = DB::transaction(function () use ($member, $request) {
-                $locked = Member::where('member_code', $member->member_code)
-                    ->lockForUpdate()
-                    ->first();
-                $balanceBefore = (float) $locked->balance;
+
+                $balanceBefore = (float) $member->balance;
 
                 if ($balanceBefore <= 0) {
                     throw new InsufficientBalanceException();
@@ -139,18 +126,29 @@ class WalletController extends Controller
 
                 $balanceAfter = round($balanceBefore - (float) $request->amount, 2);
 
-                $locked->balance = $balanceAfter;
-                $locked->save();
+                $member->balance = $balanceAfter;
+                $member->save();
 
-                return Transaction::create([
+                $transaction = Transaction::create([
                     'reference_number' => 'TXN-' . now()->format('Ymd-His') . '-' . Str::random(5),
-                    'member_id'        => $locked->id,
+                    'member_code'        => $member->member_code,
                     'type'             => 'withdraw',
                     'amount'           => $request->amount,
                     'balance_before'   => $balanceBefore,
                     'balance_after'    => $balanceAfter,
                     'description'      => $request->description,
                 ]);
+
+                // LOG SUCCESS
+                Log::channel('wallet')->info('WITHDRAW_SUCCESS', [
+                    'member_code' => $member->member_code,
+                    'amount'      => $request->amount,
+                    'before'      => $balanceBefore,
+                    'after'       => $balanceAfter,
+                    'reference'   => $transaction->reference_number,
+                    'ip'          => request()->ip(),
+                ]);
+                return $transaction;
             });
 
             return response()->json([
@@ -160,11 +158,18 @@ class WalletController extends Controller
                 'data'    => new TransactionResource($transaction->load('member')),
             ]);
         } catch (\Exception $e) {
+            //  LOG ERROR
+            Log::channel('wallet')->error('WITHDRAW_FAILED', [
+                'member_code' => $memberCode,
+                'amount'      => $request->amount,
+                'error'       => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'status'  => 'error',
-                'code'    => 422,
-                'message' => $e->getMessage(),
-            ], 422);
+                'code'    => 500,
+                'message' => 'Server error. Contact admin.'
+            ]);
         }
     }
 }

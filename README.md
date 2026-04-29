@@ -1,59 +1,297 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 💰 KOPNUS Wallet API Documentation
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Base URL**: `http://localhost:8000/api`
+**Content-Type**: `application/json`
+**Version**: `1.0.0`
+**Last Updated**: `2026-04-29`
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+# 📚 Table of Contents
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. [Flow System](#-1-flow-system)
+2. [Standar Response](#-2-standar-response)
+3. [Error Codes](#-3-error-codes)
+4. [Endpoint API](#-4-endpoint-api)
+5. [Rate Limiter](#-5-rate-limiter)
+6. [Unit Testing](#-6-testing)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+# 1. Flow System
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```
+routes/api.php
+   ↓
+RateLimiter
+   ↓
+WalletController
+   ↓
+Exception
+   ↓
+Model (Member, Transaction)
+   ↓
+Database
+   ↓
+Resource (JsonResponse)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# 2. Standar Response
 
-### Premium Partners
+## ✅ Success
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```json
+{
+    "status": "success",
+    "code": 200,
+    "message": "Success message",
+    "data": {}
+}
+```
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## ❌ Error
 
-## Code of Conduct
+```json
+{
+    "status": "error",
+    "code": 400,
+    "message": "Error message"
+}
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+# ⚠️ 3. Error Codes
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Code | Description                        |
+| ---- | ---------------------------------- |
+| 200  | Success                            |
+| 400  | Bad Request                        |
+| 403  | Member tidak aktif                 |
+| 404  | Member tidak ditemukan             |
+| 422  | Validasi gagal / saldo tidak cukup |
+| 429  | Rate limit / banyak request        |
+| 500  | Server error                       |
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 🚀 5. Endpoint API
+
+---
+
+## 🟢 1. Get Balance
+
+### Endpoint
+
+```
+GET /wallet/{memberCode}/balance
+```
+
+### Response
+
+```json
+{
+    "status": "success",
+    "code": 200,
+    "data": {
+        "member_code": "M001",
+        "name": "Adi",
+        "balance": 1000000
+    }
+}
+```
+
+---
+
+## 📜 2. Transaction History
+
+### Endpoint
+
+```
+GET /wallet/{memberCode}/history
+```
+
+### Query Params
+
+| Param | Type   | Description        |
+| ----- | ------ | ------------------ |
+| page  | int    | Pagination         |
+| type  | string | deposit / withdraw |
+
+---
+
+### Response
+
+```json
+{
+    "status": "success",
+    "data": [
+        {
+            "type": "deposit",
+            "amount": 50000,
+            "description": "Top up"
+        }
+    ]
+}
+```
+
+---
+
+## 💰 3. Deposit
+
+### Endpoint
+
+```
+POST /wallet/{memberCode}/deposit
+```
+
+### Request Body
+
+```json
+{
+    "amount": 50000,
+    "description": "Top up saldo"
+}
+```
+
+---
+
+### Response
+
+```json
+{
+    "status": "success",
+    "message": "Deposit berhasil",
+    "data": {
+        "amount": 50000
+    }
+}
+```
+
+---
+
+## 💸 4. Withdraw
+
+### Endpoint
+
+```
+POST /wallet/{memberCode}/withdraw
+```
+
+### Request Body
+
+```json
+{
+    "amount": 50000,
+    "description": "Tarik saldo"
+}
+```
+
+---
+
+### Response
+
+```json
+{
+    "status": "success",
+    "message": "Withdraw berhasil",
+    "data": {
+        "amount": 50000
+    }
+}
+```
+
+---
+
+# 🔐 6. Rate Limiter
+
+| Endpoint | Limit              |
+| -------- | ------------------ |
+| balance  | 60 request / menit |
+| history  | 30 request / menit |
+| deposit  | 10 request / menit |
+| withdraw | 5 request / menit  |
+
+---
+
+# ⚡ 7. Race Condition Handling
+
+Menggunakan database transaction + locking:
+
+```sql
+SELECT * FROM members WHERE id = ? FOR UPDATE;
+```
+
+### Tanpa Lock
+
+- Bisa terjadi double withdraw
+- Saldo tidak konsisten
+
+### Dengan Lock
+
+- Request kedua menunggu
+- Data tetap aman
+
+---
+
+# ⚙️ 8. Setup & Run
+
+```bash
+git clone https://github.com/your-repo.git
+cd project
+
+composer install
+cp .env.example .env
+php artisan key:generate
+
+php artisan migrate --seed
+
+php artisan serve
+```
+
+---
+
+# 🧪 9. Testing
+
+```bash
+php artisan test
+```
+
+---
+
+# 🧾 10. Sample CURL
+
+### Deposit
+
+```bash
+curl -X POST http://localhost:8000/api/wallet/M001/deposit \
+-H "Content-Type: application/json" \
+-d '{"amount":50000,"description":"Top up"}'
+```
+
+---
+
+### Withdraw
+
+```bash
+curl -X POST http://localhost:8000/api/wallet/M001/withdraw \
+-H "Content-Type: application/json" \
+-d '{"amount":50000}'
+```
+
+---
+
+# 🎯 Kesimpulan
+
+- API sudah menggunakan **transaction & locking**
+- Response sudah **konsisten**
+- Sudah handle:
+    - validasi
+    - error handling
+    - rate limiting
+    - concurrency issue

@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('members', function (Blueprint $table) {
             $table->id();
-            $table->string('member_code', 20)->unique();
+            $table->string('member_code', 100)->unique();
             $table->string('name', 100);
             $table->string('email', 150)->unique();
-            $table->string('phone', 20)->nullable();
+            $table->string('phone', 25)->nullable();
             $table->enum('status', ['active', 'inactive', 'suspended'])
                 ->default('active');
             $table->decimal('balance', 15, 2)->default(0.00);
