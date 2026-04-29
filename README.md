@@ -15,6 +15,9 @@
 4. [Endpoint API](#-4-endpoint-api)
 5. [Rate Limiter](#-5-rate-limiter)
 6. [Unit Testing](#-6-testing)
+7. [Setup & Run](#-7-setup-run)
+8. [Testing](#-8-testing)
+9. [Dokumentasi API](#-9-dokumentasi-api)
 
 ---
 
@@ -248,9 +251,11 @@ php artisan test
 
 ---
 
-# 🧾 10. Documentasi API
+# 🧾 9. Documentasi API
 
-### Dokumentasi menggunakan Scramble
+## Dokumentasi menggunakan Scramble
+
+CEK URL dibawah ini
 
 ```
 http://localhost:8000/docs/api
@@ -258,12 +263,14 @@ http://localhost:8000/docs/api
 
 ---
 
+## Example Request
+
 ### Withdraw
 
 ```bash
 curl -X POST http://localhost:8000/api/wallet/M001/withdraw \
 -H "Content-Type: application/json" \
--d '{"amount":50000}'
+-d '{"amount":50000, "description":"Tarik Saldo"}'
 ```
 
 ---
