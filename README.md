@@ -246,7 +246,7 @@ php artisan serve
 # 🧪 8. Testing
 
 ```bash
-php artisan test
+php artisan test --filter=WalletApiTest
 ```
 
 ---
