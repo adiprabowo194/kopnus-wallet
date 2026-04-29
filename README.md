@@ -80,7 +80,7 @@ Resource (JsonResponse)
 
 ---
 
-# 🚀 5. Endpoint API
+# 🚀 4. Endpoint API
 
 ---
 
@@ -98,51 +98,18 @@ GET /wallet/{memberCode}/balance
 {
     "status": "success",
     "code": 200,
+    "message": "Saldo ditampilkan.",
     "data": {
-        "member_code": "M001",
-        "name": "Adi",
-        "balance": 1000000
+        "member_code": "MBR-0001",
+        "name": "Budi Santoso",
+        "balance": 500000
     }
 }
 ```
 
 ---
 
-## 📜 2. Transaction History
-
-### Endpoint
-
-```
-GET /wallet/{memberCode}/history
-```
-
-### Query Params
-
-| Param | Type   | Description        |
-| ----- | ------ | ------------------ |
-| page  | int    | Pagination         |
-| type  | string | deposit / withdraw |
-
----
-
-### Response
-
-```json
-{
-    "status": "success",
-    "data": [
-        {
-            "type": "deposit",
-            "amount": 50000,
-            "description": "Top up"
-        }
-    ]
-}
-```
-
----
-
-## 💰 3. Deposit
+## 💰 2. Deposit
 
 ### Endpoint
 
@@ -166,9 +133,21 @@ POST /wallet/{memberCode}/deposit
 ```json
 {
     "status": "success",
-    "message": "Deposit berhasil",
+    "code": 200,
+    "message": "Deposit berhasil.",
     "data": {
-        "amount": 50000
+        "id": 4,
+        "reference_no": "TXN-20260429-030820-PCnO2",
+        "type": "deposit",
+        "amount": 100000,
+        "balance_before": 600000,
+        "balance_after": 700000,
+        "description": "Top Saldo",
+        "member": {
+            "member_code": "MBR-0001",
+            "name": "Budi Santoso"
+        },
+        "created_at": "2026-04-29 03:08:20"
     }
 }
 ```
@@ -199,33 +178,38 @@ POST /wallet/{memberCode}/withdraw
 ```json
 {
     "status": "success",
-    "message": "Withdraw berhasil",
+    "code": 200,
+    "message": "Withdraw berhasil.",
     "data": {
-        "amount": 50000
+        "id": 3,
+        "reference_no": "TXN-20260429-030719-JPN7J",
+        "type": "withdraw",
+        "amount": 100000,
+        "balance_before": 700000,
+        "balance_after": 600000,
+        "description": null,
+        "member": {
+            "member_code": "MBR-0001",
+            "name": "Budi Santoso"
+        },
+        "created_at": "2026-04-29 03:07:19"
     }
 }
 ```
 
 ---
 
-# 🔐 6. Rate Limiter
+# 🔐 5. Rate Limiter
 
 | Endpoint | Limit              |
 | -------- | ------------------ |
-| balance  | 60 request / menit |
-| history  | 30 request / menit |
-| deposit  | 10 request / menit |
-| withdraw | 5 request / menit  |
+| global   | 60 request / menit |
 
 ---
 
-# ⚡ 7. Race Condition Handling
+# ⚡ 6. Race Condition Handling
 
 Menggunakan database transaction + locking:
-
-```sql
-SELECT * FROM members WHERE id = ? FOR UPDATE;
-```
 
 ### Tanpa Lock
 
@@ -234,16 +218,16 @@ SELECT * FROM members WHERE id = ? FOR UPDATE;
 
 ### Dengan Lock
 
-- Request kedua menunggu
+- Request kedua menunggu (Lock for update)
 - Data tetap aman
 
 ---
 
-# ⚙️ 8. Setup & Run
+# ⚙️ 7. Setup & Run
 
 ```bash
-git clone https://github.com/your-repo.git
-cd project
+git clone https://github.com/kopnus-wallet
+cd kopnus-wallet
 
 composer install
 cp .env.example .env
@@ -256,7 +240,7 @@ php artisan serve
 
 ---
 
-# 🧪 9. Testing
+# 🧪 8. Testing
 
 ```bash
 php artisan test
@@ -264,14 +248,12 @@ php artisan test
 
 ---
 
-# 🧾 10. Sample CURL
+# 🧾 10. Documentasi API
 
-### Deposit
+### Dokumentasi menggunakan Scramble
 
-```bash
-curl -X POST http://localhost:8000/api/wallet/M001/deposit \
--H "Content-Type: application/json" \
--d '{"amount":50000,"description":"Top up"}'
+```
+http://localhost:8000/docs/api
 ```
 
 ---
