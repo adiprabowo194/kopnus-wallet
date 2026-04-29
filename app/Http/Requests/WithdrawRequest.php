@@ -33,7 +33,7 @@ class WithdrawRequest extends FormRequest
     {
         throw new HttpResponseException(response()->json([
             'status'  => 'error',
-            'code'    => 422,
+            'code'    => 400,
             'message' => 'Validasi gagal.',
             'errors'  => $validator->errors(),
         ], 422));

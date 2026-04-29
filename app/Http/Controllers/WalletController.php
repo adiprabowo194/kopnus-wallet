@@ -120,7 +120,6 @@ class WalletController extends Controller
                 }
 
                 if ($balanceBefore < (float) $request->amount) {
-
                     throw new InsufficientBalanceException();
                 }
 
@@ -158,14 +157,15 @@ class WalletController extends Controller
                 'data'    => new TransactionResource($transaction->load('member')),
             ]);
         } catch (InsufficientBalanceException $e) {
+            //  LOG ERROR
+            Log::channel('wallet')->error('WITHDRAW_FAILED', [
+                'member_code' => $memberCode,
+                'amount'      => $request->amount,
+                'error'       => "Saldo tidak mencukupi biaya transaksi",
+            ]);
 
-            return response()->json([
-                'status'  => 'error',
-                'code'    => 400,
-                'message' => 'Saldo tidak mencukupi.'
-            ], 400);
+            throw new InsufficientBalanceException();
         } catch (\Exception $e) {
-
             //  LOG ERROR
             Log::channel('wallet')->error('WITHDRAW_FAILED', [
                 'member_code' => $memberCode,

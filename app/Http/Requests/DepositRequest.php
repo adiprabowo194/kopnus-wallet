@@ -34,7 +34,7 @@ class DepositRequest extends FormRequest
     {
         throw new HttpResponseException(response()->json([
             'status'  => 'error',
-            'code'    => 422,
+            'code'    => 400,
             'message' => 'Cek Kembali Parameter Anda. Validasi Gagal',
             'errors'  => $validator->errors(),
         ], 422));
